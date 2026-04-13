@@ -13,8 +13,8 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('ID:', d.get\\('id','ERROR'\\)\\); print\\('Email:', d.get\\('email','?'\\)\\)\")",
       "Bash(lsof -ti:3000)",
       "Bash(xargs kill:*)",
-      "Bash(mkdir -p /Users/morrisanderson/Downloads/AIOS/DisptchMama/.claude/commands)",
-      "Bash(cp /Users/morrisanderson/Downloads/AIOS/DisptchMama/aios-starter-kit/.claude/commands/*.md /Users/morrisanderson/Downloads/AIOS/DisptchMama/.claude/commands/)",
+      "Bash(mkdir -p /Users/morrisanderson/Projects-clean/DisptchMama-App/.claude/commands)",
+      "Bash(cp /Users/morrisanderson/Projects-clean/DisptchMama-App/aios-starter-kit/.claude/commands/*.md /Users/morrisanderson/Projects-clean/DisptchMama-App/.claude/commands/)",
       "Bash(cp:*)",
       "Bash(cp module-installs/aios-module-frontend-design/skill/SKILL.md .claude/skills/frontend-design/SKILL.md)",
       "Bash(cp module-installs/aios-module-frontend-design/skill/references/example-catalog.md .claude/skills/frontend-design/references/example-catalog.md)",
@@ -35,9 +35,9 @@
       "Bash(echo \"shadcn check exit: $?\")",
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
-      "Bash(cp -r /Users/morrisanderson/Downloads/AIOS/DisptchMama/public /Users/morrisanderson/Projects-clean/DisptchMama/)",
+      "Bash(cp -r /Users/morrisanderson/Projects-clean/DisptchMama-App/public /Users/morrisanderson/Projects-clean/DisptchMama/)",
       "Bash(echo \"public: $?\")",
-      "Bash(cp -r /Users/morrisanderson/Downloads/AIOS/DisptchMama/aios /Users/morrisanderson/Projects-clean/DisptchMama/)",
+      "Bash(cp -r /Users/morrisanderson/Projects-clean/DisptchMama-App/aios /Users/morrisanderson/Projects-clean/DisptchMama/)",
       "Bash(echo \"aios: $?\")",
       "Bash(echo \"schema: $?\")"
     ]

@@ -7,7 +7,7 @@ You are implementing Phase 1 of a clean architecture migration for the DisptchMa
 ## CONSTRAINTS (read these first — they are non-negotiable)
 
 1. **Work directory**: `/Users/morrisanderson/Projects-clean/DisptchMama` — all new files go here.
-2. **Reference directory**: `/Users/morrisanderson/Downloads/AIOS/DisptchMama` — READ-ONLY. Copy from here. Never modify.
+2. **Reference directory**: `/Users/morrisanderson/Projects-clean/DisptchMama-App` — READ-ONLY. Copy from here. Never modify.
 3. **Scope**: Phase 1 ONLY — scaffold, services layer, dispatch vertical slice, validation gate.
 4. **Stop at the validation gate**. Do NOT proceed to Phase 2.
 5. **Do NOT push, deploy, or `git push`**.
@@ -21,7 +21,7 @@ You are implementing Phase 1 of a clean architecture migration for the DisptchMa
 
 ## REFERENCE: The AIOS v2 documents are at:
 ```
-/Users/morrisanderson/Downloads/AIOS/DisptchMama/aios/
+/Users/morrisanderson/Projects-clean/DisptchMama-App/aios/
 ```
 Read these if you need architectural context:
 - `02_architecture/folder-structure.md` — target folder structure
@@ -312,19 +312,19 @@ Copy all of these as-is from reference (no modifications):
 
 ```bash
 # Copy public assets
-cp -r /Users/morrisanderson/Downloads/AIOS/DisptchMama/public /Users/morrisanderson/Projects-clean/DisptchMama/
+cp -r /Users/morrisanderson/Projects-clean/DisptchMama-App/public /Users/morrisanderson/Projects-clean/DisptchMama/
 
 # Copy AIOS context (AI-only, never imported by src/)
-cp -r /Users/morrisanderson/Downloads/AIOS/DisptchMama/aios /Users/morrisanderson/Projects-clean/DisptchMama/
+cp -r /Users/morrisanderson/Projects-clean/DisptchMama-App/aios /Users/morrisanderson/Projects-clean/DisptchMama/
 
 # Copy schema
 mkdir -p /Users/morrisanderson/Projects-clean/DisptchMama/supabase
-cp /Users/morrisanderson/Downloads/AIOS/DisptchMama/supabase/schema.sql /Users/morrisanderson/Projects-clean/DisptchMama/supabase/
+cp /Users/morrisanderson/Projects-clean/DisptchMama-App/supabase/schema.sql /Users/morrisanderson/Projects-clean/DisptchMama/supabase/
 ```
 
 Also copy the `.claude/` directory if it exists (commands, skills, settings):
 ```bash
-cp -r /Users/morrisanderson/Downloads/AIOS/DisptchMama/.claude /Users/morrisanderson/Projects-clean/DisptchMama/
+cp -r /Users/morrisanderson/Projects-clean/DisptchMama-App/.claude /Users/morrisanderson/Projects-clean/DisptchMama/
 ```
 
 ---

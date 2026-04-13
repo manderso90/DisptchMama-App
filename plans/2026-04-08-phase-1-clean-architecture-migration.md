@@ -22,7 +22,7 @@ The current codebase has business logic embedded directly in server actions (`sc
 
 ### Relevant Existing Structure
 
-**Reference project** (`/Users/morrisanderson/Downloads/AIOS/DisptchMama`):
+**Reference project** (`/Users/morrisanderson/Projects-clean/DisptchMama-App`):
 ```
 src/
 ├── types/database.ts              # Type source of truth (JobStatus, DispatchStatus, etc.)
@@ -875,17 +875,17 @@ Copy `src/app/globals.css` from reference, then remove these 4 stale lines:
 
 ```bash
 # Copy public assets
-cp -r /Users/morrisanderson/Downloads/AIOS/DisptchMama/public /Users/morrisanderson/Projects-clean/DisptchMama/
+cp -r /Users/morrisanderson/Projects-clean/DisptchMama-App/public /Users/morrisanderson/Projects-clean/DisptchMama/
 
 # Copy AIOS context (AI-only, never imported by src/)
-cp -r /Users/morrisanderson/Downloads/AIOS/DisptchMama/aios /Users/morrisanderson/Projects-clean/DisptchMama/
+cp -r /Users/morrisanderson/Projects-clean/DisptchMama-App/aios /Users/morrisanderson/Projects-clean/DisptchMama/
 
 # Copy schema
 mkdir -p /Users/morrisanderson/Projects-clean/DisptchMama/supabase
-cp /Users/morrisanderson/Downloads/AIOS/DisptchMama/supabase/schema.sql /Users/morrisanderson/Projects-clean/DisptchMama/supabase/
+cp /Users/morrisanderson/Projects-clean/DisptchMama-App/supabase/schema.sql /Users/morrisanderson/Projects-clean/DisptchMama/supabase/
 
 # Copy .claude directory
-cp -r /Users/morrisanderson/Downloads/AIOS/DisptchMama/.claude /Users/morrisanderson/Projects-clean/DisptchMama/
+cp -r /Users/morrisanderson/Projects-clean/DisptchMama-App/.claude /Users/morrisanderson/Projects-clean/DisptchMama/
 ```
 
 **Files affected:**

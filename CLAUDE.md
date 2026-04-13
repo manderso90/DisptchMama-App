@@ -196,6 +196,28 @@ If yes to any, update the relevant sections. This file must always reflect the c
 
 ---
 
+## Infrastructure — Source of Truth
+
+### GitHub
+- **Repo:** https://github.com/manderso90/DisptchMama-App
+- **Branch:** main
+
+### Vercel
+- **Project:** disptch-mama
+- **Production URL:** https://disptchmama.com
+
+### Supabase
+- **Project:** jtzhujorramtwwtvbjlg
+- **Credentials:** stored in `.env.local` (gitignored)
+
+### Key Notes
+- This repo is fully separated from Seller's Compliance
+- All deployments run from the main branch
+- GitHub pushes auto-deploy to Vercel
+- `.env.local` contains: Supabase URL, anon key, service role key, GitHub PAT, Vercel token
+
+---
+
 ## Notes
 
 - Keep context minimal but sufficient — avoid bloat
