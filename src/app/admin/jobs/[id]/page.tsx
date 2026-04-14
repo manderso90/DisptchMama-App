@@ -1,28 +1,13 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getJobDetail, getJobStatusHistory } from '@/lib/queries/jobs'
+import { getJobDetail, getJobStatusHistory, getActiveInspectors } from '@/lib/queries/jobs'
 import { JobDetailClient } from '@/components/admin/jobs/JobDetailClient'
 import { JobHistory } from '@/components/admin/jobs/JobHistory'
+import { JobStatusControl } from '@/components/admin/jobs/JobStatusControl'
+import { InspectorAssignment } from '@/components/admin/jobs/InspectorAssignment'
+import type { JobStatus } from '@/types/database'
 import { ArrowLeft, Calendar, MapPin, Clock } from 'lucide-react'
 import { format } from 'date-fns'
-
-const statusBadge: Record<string, string> = {
-  pending: 'bg-[#FDE047]/20 text-amber-800 border border-amber-400',
-  confirmed: 'bg-[#2563EB]/10 text-blue-800 border border-blue-400',
-  in_progress: 'bg-purple-100 text-purple-800 border border-purple-400',
-  completed: 'bg-green-100 text-green-800 border border-green-400',
-  cancelled: 'bg-slate-100 text-slate-600 border border-slate-400',
-  on_hold: 'bg-slate-100 text-slate-600 border border-slate-400',
-}
-
-const statusLabel: Record<string, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-  on_hold: 'On Hold',
-}
 
 interface JobDetailPageProps {
   params: Promise<{ id: string }>
@@ -31,9 +16,10 @@ interface JobDetailPageProps {
 export default async function JobDetailPage({ params }: JobDetailPageProps) {
   const { id } = await params
 
-  const [job, history] = await Promise.all([
+  const [job, history, inspectors] = await Promise.all([
     getJobDetail(id),
     getJobStatusHistory(id),
+    getActiveInspectors(),
   ])
 
   if (!job) notFound()
@@ -75,29 +61,20 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         {/* Delete button placeholder — Phase 3 */}
       </div>
 
-      {/* Status + Assignment (read-only for Phase 1) */}
+      {/* Status + Assignment */}
       <div className="bg-white border-2 border-black rounded-lg p-5 neo-shadow space-y-5">
-        {/* Status display */}
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-slate-500">Status</span>
-          <span
-            className={`text-xs px-2 py-1 rounded-md font-medium ${statusBadge[job.status] ?? statusBadge.pending}`}
-          >
-            {statusLabel[job.status] ?? job.status}
-          </span>
-        </div>
+        <JobStatusControl jobId={job.id} currentStatus={job.status as JobStatus} />
 
-        {/* Inspector assignment display */}
         <div className="border-t border-slate-200 pt-5">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-slate-500">Assigned To</span>
-            <span className="text-sm text-slate-700">
-              {job.inspector_name ?? 'Unassigned'}
-            </span>
-          </div>
+          <InspectorAssignment
+            jobId={job.id}
+            currentInspectorId={job.assigned_to}
+            currentInspectorName={job.inspector_name}
+            inspectors={inspectors}
+          />
         </div>
 
-        {/* Dispatch info */}
+        {/* Dispatch info (read-only) */}
         <div className="border-t border-slate-200 pt-5">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-slate-500">Dispatch Status</span>

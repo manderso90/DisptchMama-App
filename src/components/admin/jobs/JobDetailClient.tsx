@@ -184,23 +184,20 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
 
   return (
     <div className="bg-white border-2 border-black rounded-lg neo-shadow">
-      <div
-        className="p-5 cursor-pointer select-none flex items-center justify-between"
+      <button
+        type="button"
+        className="w-full text-left p-5 cursor-pointer select-none flex items-center justify-between"
         onClick={() => setSchedulingOpen((prev) => !prev)}
       >
         <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide font-[Syne]">
           Smart Scheduling
         </h3>
-        <span
-          className="text-slate-500 transition-transform duration-200 text-sm"
-          style={{
-            display: 'inline-block',
-            transform: schedulingOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-          }}
-        >
-          &#9660;
-        </span>
-      </div>
+        {schedulingOpen && (
+          <span className="text-slate-500 text-sm" aria-hidden="true">
+            &#9650;
+          </span>
+        )}
+      </button>
       {schedulingOpen && (
         <div className="px-5 pb-5 space-y-4">
           <Button

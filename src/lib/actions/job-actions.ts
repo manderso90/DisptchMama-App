@@ -2,6 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { isValidTransition } from '@/services/job-lifecycle'
+import type { JobStatus } from '@/types/database'
 
 export async function createJob(data: {
   title: string
@@ -49,12 +51,21 @@ export async function updateJobStatus(jobId: string, status: string) {
   } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
-  // Get current status for history
+  // Get current status for history + transition validation
   const { data: current } = await supabase
     .from('jobs')
     .select('status')
     .eq('id', jobId)
     .single()
+
+  if (!current) throw new Error('Job not found')
+
+  // Validate transition
+  if (!isValidTransition(current.status as JobStatus, status as JobStatus)) {
+    throw new Error(
+      `Invalid status transition: ${current.status} → ${status}`
+    )
+  }
 
   const { error } = await supabase
     .from('jobs')
@@ -67,11 +78,31 @@ export async function updateJobStatus(jobId: string, status: string) {
   await supabase.from('job_status_history').insert({
     job_id: jobId,
     changed_by: user.id,
-    from_status: current?.status ?? null,
+    from_status: current.status,
     to_status: status,
   })
 
   revalidatePath('/admin/jobs')
+  revalidatePath(`/admin/jobs/${jobId}`)
+  revalidatePath('/admin/dispatch')
+}
+
+export async function assignInspector(jobId: string, inspectorId: string | null) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const { error } = await supabase
+    .from('jobs')
+    .update({ assigned_to: inspectorId })
+    .eq('id', jobId)
+
+  if (error) throw error
+
+  revalidatePath('/admin/jobs')
+  revalidatePath(`/admin/jobs/${jobId}`)
   revalidatePath('/admin/dispatch')
 }
 
