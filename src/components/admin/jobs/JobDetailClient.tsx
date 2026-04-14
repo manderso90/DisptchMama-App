@@ -1,35 +1,11 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { format } from 'date-fns'
-import { useRouter } from 'next/navigation'
 import type { Job } from '@/types/database'
 import type { SchedulingSuggestion, SuggestionResult, ApplyResult, TimeConflict } from '@/services/scheduling/types'
 import { getSchedulingSuggestions, applySuggestion } from '@/lib/actions/scheduling-actions'
 import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-
-// ---------------------------------------------------------------------------
-// Status badge styles (reused from JobsTable)
-// ---------------------------------------------------------------------------
-
-const statusBadge: Record<string, string> = {
-  pending: 'bg-[#FDE047]/20 text-amber-800 border border-amber-400',
-  confirmed: 'bg-[#2563EB]/10 text-blue-800 border border-blue-400',
-  in_progress: 'bg-purple-100 text-purple-800 border border-purple-400',
-  completed: 'bg-green-100 text-green-800 border border-green-400',
-  cancelled: 'bg-slate-100 text-slate-600 border border-slate-400',
-  on_hold: 'bg-slate-100 text-slate-600 border border-slate-400',
-}
-
-const statusLabel: Record<string, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-  on_hold: 'On Hold',
-}
+import { useRouter } from 'next/navigation'
 
 // ---------------------------------------------------------------------------
 // Score bar component
@@ -137,7 +113,7 @@ function ConflictAlert({ conflicts }: { conflicts: TimeConflict[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Main component
+// Main component — Smart Scheduling only
 // ---------------------------------------------------------------------------
 
 interface JobDetailClientProps {
@@ -152,9 +128,9 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [applyingId, setApplyingId] = useState<string | null>(null)
+  const [schedulingOpen, setSchedulingOpen] = useState(false)
 
   const canSuggest = job.status !== 'completed' && job.status !== 'cancelled'
-  const [schedulingOpen, setSchedulingOpen] = useState(false)
 
   function handleGetSuggestions() {
     setError(null)
@@ -204,159 +180,84 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
     })
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Job header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-[Syne]">
-              {job.title} &mdash; {job.client_name}
-            </CardTitle>
-            <span
-              className={`text-xs px-2 py-1 rounded-md font-medium ${statusBadge[job.status] ?? statusBadge.pending}`}
-            >
-              {statusLabel[job.status] ?? job.status}
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="space-y-2">
-              <DetailRow label="Address" value={`${job.address}, ${job.city}, ${job.state} ${job.zip_code}`} />
-              <DetailRow label="Phone" value={job.client_phone} />
-              <DetailRow label="Email" value={job.client_email} />
-              <DetailRow label="Lockbox" value={job.has_lockbox ? 'Yes' : 'No'} />
-            </div>
-            <div className="space-y-2">
-              <DetailRow label="Assigned To" value={job.inspector_name ?? 'Unassigned'} />
-              <DetailRow
-                label="Scheduled"
-                value={
-                  job.scheduled_date
-                    ? `${format(new Date(job.scheduled_date + 'T12:00:00'), 'MMM d, yyyy')} at ${job.scheduled_time ?? 'TBD'}`
-                    : 'Unscheduled'
-                }
-              />
-              <DetailRow label="Duration" value={`${job.estimated_duration_minutes} min`} />
-              <DetailRow label="Requested Date" value={job.requested_date ?? 'None'} />
-              <DetailRow
-                label="Time Preference"
-                value={job.requested_time_preference ?? 'None'}
-              />
-            </div>
-          </div>
-          {job.notes && (
-            <div className="mt-4 text-sm">
-              <span className="font-medium text-slate-700">Notes: </span>
-              <span className="text-slate-600">{job.notes}</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+  if (!canSuggest) return null
 
-      {/* Smart Scheduling section */}
-      {canSuggest && (
-        <Card>
-          <CardHeader
-            className="cursor-pointer select-none"
-            onClick={() => setSchedulingOpen((prev) => !prev)}
+  return (
+    <div className="bg-white border-2 border-black rounded-lg neo-shadow">
+      <div
+        className="p-5 cursor-pointer select-none flex items-center justify-between"
+        onClick={() => setSchedulingOpen((prev) => !prev)}
+      >
+        <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide font-[Syne]">
+          Smart Scheduling
+        </h3>
+        <span
+          className="text-slate-500 transition-transform duration-200 text-sm"
+          style={{
+            display: 'inline-block',
+            transform: schedulingOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}
+        >
+          &#9660;
+        </span>
+      </div>
+      {schedulingOpen && (
+        <div className="px-5 pb-5 space-y-4">
+          <Button
+            variant="default"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleGetSuggestions()
+            }}
+            disabled={isPending}
           >
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-[Syne] flex items-center gap-2">
-                <span>Smart Scheduling</span>
-              </CardTitle>
-              <span
-                className="text-slate-500 transition-transform duration-200 text-sm"
-                style={{
-                  display: 'inline-block',
-                  transform: schedulingOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                }}
-              >
-                &#9660;
-              </span>
+            {isPending && !applyingId
+              ? 'Finding best options...'
+              : 'Get Suggestions'}
+          </Button>
+
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+              {error}
             </div>
-          </CardHeader>
-          {schedulingOpen && (
-            <CardContent>
-              <div className="space-y-4">
-                <Button
-                  variant="default"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleGetSuggestions()
-                  }}
-                  disabled={isPending}
-                >
-                  {isPending && !applyingId
-                    ? 'Finding best options...'
-                    : 'Get Suggestions'}
-                </Button>
-
-                {error && (
-                  <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
-                    {error}
-                  </div>
-                )}
-
-                {conflicts && <ConflictAlert conflicts={conflicts} />}
-
-                {applySuccess && (
-                  <div className="text-sm text-green-700 bg-green-50 border border-green-300 rounded-lg p-3">
-                    Suggestion applied successfully. Job has been scheduled.
-                  </div>
-                )}
-
-                {suggestions && suggestions.suggestions.length === 0 && (
-                  <div className="text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3">
-                    No available slots found for this date. Try a different date or
-                    check inspector availability.
-                  </div>
-                )}
-
-                {suggestions && suggestions.suggestions.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="text-xs text-slate-500">
-                      {suggestions.suggestions.length} suggestion(s) for{' '}
-                      {suggestions.suggestions[0].date} &mdash; ranked by fit score
-                    </p>
-                    {suggestions.suggestions.map((s, i) => (
-                      <SuggestionCard
-                        key={`${s.inspectorId}-${s.startTime}`}
-                        suggestion={s}
-                        rank={i + 1}
-                        onApply={handleApply}
-                        isApplying={
-                          applyingId === s.inspectorId + s.startTime && isPending
-                        }
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
           )}
-        </Card>
+
+          {conflicts && <ConflictAlert conflicts={conflicts} />}
+
+          {applySuccess && (
+            <div className="text-sm text-green-700 bg-green-50 border border-green-300 rounded-lg p-3">
+              Suggestion applied successfully. Job has been scheduled.
+            </div>
+          )}
+
+          {suggestions && suggestions.suggestions.length === 0 && (
+            <div className="text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3">
+              No available slots found for this date. Try a different date or
+              check inspector availability.
+            </div>
+          )}
+
+          {suggestions && suggestions.suggestions.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs text-slate-500">
+                {suggestions.suggestions.length} suggestion(s) for{' '}
+                {suggestions.suggestions[0].date} &mdash; ranked by fit score
+              </p>
+              {suggestions.suggestions.map((s, i) => (
+                <SuggestionCard
+                  key={`${s.inspectorId}-${s.startTime}`}
+                  suggestion={s}
+                  rank={i + 1}
+                  onApply={handleApply}
+                  isApplying={
+                    applyingId === s.inspectorId + s.startTime && isPending
+                  }
+                />
+              ))}
+            </div>
+          )}
+        </div>
       )}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Helper
-// ---------------------------------------------------------------------------
-
-function DetailRow({
-  label,
-  value,
-}: {
-  label: string
-  value: string | null | undefined
-}) {
-  return (
-    <div className="flex gap-2">
-      <span className="font-medium text-slate-700 min-w-[120px]">{label}:</span>
-      <span className="text-slate-600">{value || '\u2014'}</span>
     </div>
   )
 }

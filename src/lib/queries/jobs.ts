@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import type { Job } from '@/types/database'
+import type { Job, JobStatusHistory, Inspector } from '@/types/database'
 
 export async function getJobsList(): Promise<(Job & { inspector_name: string | null })[]> {
   const supabase = await createClient()
@@ -38,4 +38,57 @@ export async function getJobDetail(jobId: string): Promise<(Job & { inspector_na
     ...(job as unknown as Job),
     inspector_name: insp?.full_name ?? null,
   }
+}
+
+export async function getJobStatusHistory(
+  jobId: string
+): Promise<(JobStatusHistory & { changed_by_name: string | null })[]> {
+  const supabase = await createClient()
+
+  const { data: history, error } = await supabase
+    .from('job_status_history')
+    .select('*')
+    .eq('job_id', jobId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  // Batch-fetch team member names for changed_by
+  const changerIds = [
+    ...new Set(
+      (history ?? [])
+        .map((h) => h.changed_by)
+        .filter((id): id is string => id !== null)
+    ),
+  ]
+
+  let changerMap: Record<string, string> = {}
+  if (changerIds.length > 0) {
+    const { data: members } = await supabase
+      .from('team_members')
+      .select('id, full_name, email')
+      .in('id', changerIds)
+
+    changerMap = Object.fromEntries(
+      (members ?? []).map((m) => [m.id, m.full_name ?? m.email ?? 'Unknown'])
+    )
+  }
+
+  return (history ?? []).map((h) => ({
+    ...h,
+    changed_by_name: h.changed_by ? (changerMap[h.changed_by] ?? null) : null,
+  }))
+}
+
+export async function getActiveInspectors(): Promise<Pick<Inspector, 'id' | 'full_name' | 'region'>[]> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('inspectors')
+    .select('id, full_name, region')
+    .eq('is_active', true)
+    .order('full_name')
+
+  if (error) throw error
+  return data ?? []
 }
