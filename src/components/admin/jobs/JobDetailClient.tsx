@@ -128,7 +128,7 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [applyingId, setApplyingId] = useState<string | null>(null)
-  const [schedulingOpen, setSchedulingOpen] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
   const canSuggest = job.status !== 'completed' && job.status !== 'cancelled'
 
@@ -136,6 +136,7 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
     setError(null)
     setConflicts(null)
     setApplySuccess(false)
+    setExpanded(true)
     startTransition(async () => {
       try {
         const result = await getSchedulingSuggestions(job.id)
@@ -144,6 +145,14 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
         setError(e instanceof Error ? e.message : 'Failed to get suggestions')
       }
     })
+  }
+
+  function handleCollapse() {
+    setExpanded(false)
+    setSuggestions(null)
+    setError(null)
+    setConflicts(null)
+    setApplySuccess(false)
   }
 
   function handleApply(suggestion: SchedulingSuggestion) {
@@ -184,77 +193,101 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
 
   return (
     <div className="bg-white border-2 border-black rounded-lg neo-shadow">
-      <button
-        type="button"
-        className="w-full text-left p-5 cursor-pointer select-none flex items-center justify-between"
-        onClick={() => setSchedulingOpen((prev) => !prev)}
-      >
-        <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide font-[Syne]">
-          Smart Scheduling
-        </h3>
-        {schedulingOpen && (
-          <span className="text-slate-500 text-sm" aria-hidden="true">
-            &#9650;
-          </span>
+      <div className="p-5">
+        {!expanded ? (
+          /* ---- Collapsed: label + Get Suggestions button ---- */
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide font-[Syne]">
+              Smart Scheduling
+            </h3>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleGetSuggestions}
+              disabled={isPending && !applyingId}
+            >
+              {isPending && !applyingId
+                ? 'Finding best options...'
+                : 'Get Suggestions'}
+            </Button>
+          </div>
+        ) : (
+          /* ---- Expanded: label + Collapse button + suggestions ---- */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide font-[Syne]">
+                Smart Scheduling
+              </h3>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleGetSuggestions}
+                  disabled={isPending && !applyingId}
+                >
+                  {isPending && !applyingId
+                    ? 'Finding best options...'
+                    : 'Refresh'}
+                </Button>
+                <button
+                  type="button"
+                  onClick={handleCollapse}
+                  className="text-xs px-3 py-1.5 rounded-md border-2 border-black font-medium bg-white hover:bg-slate-100 transition-colors"
+                >
+                  Collapse &#9650;
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+                {error}
+              </div>
+            )}
+
+            {conflicts && <ConflictAlert conflicts={conflicts} />}
+
+            {applySuccess && (
+              <div className="text-sm text-green-700 bg-green-50 border border-green-300 rounded-lg p-3">
+                Suggestion applied successfully. Job has been scheduled.
+              </div>
+            )}
+
+            {isPending && !applyingId && !suggestions && (
+              <div className="text-sm text-slate-500">
+                Loading suggestions...
+              </div>
+            )}
+
+            {suggestions && suggestions.suggestions.length === 0 && (
+              <div className="text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                No available slots found for this date. Try a different date or
+                check inspector availability.
+              </div>
+            )}
+
+            {suggestions && suggestions.suggestions.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-xs text-slate-500">
+                  {suggestions.suggestions.length} suggestion(s) for{' '}
+                  {suggestions.suggestions[0].date} &mdash; ranked by fit score
+                </p>
+                {suggestions.suggestions.map((s, i) => (
+                  <SuggestionCard
+                    key={`${s.inspectorId}-${s.startTime}`}
+                    suggestion={s}
+                    rank={i + 1}
+                    onApply={handleApply}
+                    isApplying={
+                      applyingId === s.inspectorId + s.startTime && isPending
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         )}
-      </button>
-      {schedulingOpen && (
-        <div className="px-5 pb-5 space-y-4">
-          <Button
-            variant="default"
-            onClick={(e) => {
-              e.stopPropagation()
-              handleGetSuggestions()
-            }}
-            disabled={isPending}
-          >
-            {isPending && !applyingId
-              ? 'Finding best options...'
-              : 'Get Suggestions'}
-          </Button>
-
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
-              {error}
-            </div>
-          )}
-
-          {conflicts && <ConflictAlert conflicts={conflicts} />}
-
-          {applySuccess && (
-            <div className="text-sm text-green-700 bg-green-50 border border-green-300 rounded-lg p-3">
-              Suggestion applied successfully. Job has been scheduled.
-            </div>
-          )}
-
-          {suggestions && suggestions.suggestions.length === 0 && (
-            <div className="text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3">
-              No available slots found for this date. Try a different date or
-              check inspector availability.
-            </div>
-          )}
-
-          {suggestions && suggestions.suggestions.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-xs text-slate-500">
-                {suggestions.suggestions.length} suggestion(s) for{' '}
-                {suggestions.suggestions[0].date} &mdash; ranked by fit score
-              </p>
-              {suggestions.suggestions.map((s, i) => (
-                <SuggestionCard
-                  key={`${s.inspectorId}-${s.startTime}`}
-                  suggestion={s}
-                  rank={i + 1}
-                  onApply={handleApply}
-                  isApplying={
-                    applyingId === s.inspectorId + s.startTime && isPending
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      </div>
     </div>
   )
 }
