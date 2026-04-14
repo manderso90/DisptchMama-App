@@ -154,6 +154,7 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
   const [applyingId, setApplyingId] = useState<string | null>(null)
 
   const canSuggest = job.status !== 'completed' && job.status !== 'cancelled'
+  const [schedulingOpen, setSchedulingOpen] = useState(false)
 
   function handleGetSuggestions() {
     setError(null)
@@ -257,65 +258,84 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
       {/* Smart Scheduling section */}
       {canSuggest && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base font-[Syne]">
-              Smart Scheduling
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Button
-                variant="default"
-                onClick={handleGetSuggestions}
-                disabled={isPending}
+          <CardHeader
+            className="cursor-pointer select-none"
+            onClick={() => setSchedulingOpen((prev) => !prev)}
+          >
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-[Syne] flex items-center gap-2">
+                <span>Smart Scheduling</span>
+              </CardTitle>
+              <span
+                className="text-slate-500 transition-transform duration-200 text-sm"
+                style={{
+                  display: 'inline-block',
+                  transform: schedulingOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                }}
               >
-                {isPending && !applyingId
-                  ? 'Finding best options...'
-                  : 'Get Suggestions'}
-              </Button>
-
-              {error && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
-                  {error}
-                </div>
-              )}
-
-              {conflicts && <ConflictAlert conflicts={conflicts} />}
-
-              {applySuccess && (
-                <div className="text-sm text-green-700 bg-green-50 border border-green-300 rounded-lg p-3">
-                  Suggestion applied successfully. Job has been scheduled.
-                </div>
-              )}
-
-              {suggestions && suggestions.suggestions.length === 0 && (
-                <div className="text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3">
-                  No available slots found for this date. Try a different date or
-                  check inspector availability.
-                </div>
-              )}
-
-              {suggestions && suggestions.suggestions.length > 0 && (
-                <div className="space-y-3">
-                  <p className="text-xs text-slate-500">
-                    {suggestions.suggestions.length} suggestion(s) for{' '}
-                    {suggestions.suggestions[0].date} &mdash; ranked by fit score
-                  </p>
-                  {suggestions.suggestions.map((s, i) => (
-                    <SuggestionCard
-                      key={`${s.inspectorId}-${s.startTime}`}
-                      suggestion={s}
-                      rank={i + 1}
-                      onApply={handleApply}
-                      isApplying={
-                        applyingId === s.inspectorId + s.startTime && isPending
-                      }
-                    />
-                  ))}
-                </div>
-              )}
+                &#9660;
+              </span>
             </div>
-          </CardContent>
+          </CardHeader>
+          {schedulingOpen && (
+            <CardContent>
+              <div className="space-y-4">
+                <Button
+                  variant="default"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleGetSuggestions()
+                  }}
+                  disabled={isPending}
+                >
+                  {isPending && !applyingId
+                    ? 'Finding best options...'
+                    : 'Get Suggestions'}
+                </Button>
+
+                {error && (
+                  <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+                    {error}
+                  </div>
+                )}
+
+                {conflicts && <ConflictAlert conflicts={conflicts} />}
+
+                {applySuccess && (
+                  <div className="text-sm text-green-700 bg-green-50 border border-green-300 rounded-lg p-3">
+                    Suggestion applied successfully. Job has been scheduled.
+                  </div>
+                )}
+
+                {suggestions && suggestions.suggestions.length === 0 && (
+                  <div className="text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    No available slots found for this date. Try a different date or
+                    check inspector availability.
+                  </div>
+                )}
+
+                {suggestions && suggestions.suggestions.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-xs text-slate-500">
+                      {suggestions.suggestions.length} suggestion(s) for{' '}
+                      {suggestions.suggestions[0].date} &mdash; ranked by fit score
+                    </p>
+                    {suggestions.suggestions.map((s, i) => (
+                      <SuggestionCard
+                        key={`${s.inspectorId}-${s.startTime}`}
+                        suggestion={s}
+                        rank={i + 1}
+                        onApply={handleApply}
+                        isApplying={
+                          applyingId === s.inspectorId + s.startTime && isPending
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          )}
         </Card>
       )}
     </div>
