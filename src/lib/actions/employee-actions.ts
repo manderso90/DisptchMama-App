@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import type { TeamMemberRole } from '@/types/database'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -12,10 +13,13 @@ async function requireAdmin() {
 
   const { data: profile } = await supabase
     .from('team_members')
-    .select('role')
+    .select('roles')
     .eq('id', user.id)
     .single()
-  if (profile?.role !== 'admin') throw new Error('Admin access required')
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const roles: string[] = (profile as any)?.roles ?? []
+  if (!roles.includes('admin')) throw new Error('Admin access required')
 
   return { supabase, user }
 }
@@ -24,7 +28,7 @@ export async function updateEmployee(
   employeeId: string,
   data: {
     full_name?: string
-    role?: 'admin' | 'dispatcher' | 'field_tech'
+    roles?: TeamMemberRole[]
     phone?: string
     is_active?: boolean
   }

@@ -8,7 +8,10 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type TeamMemberRole = 'admin' | 'dispatcher' | 'field_tech'
+export type TeamMemberRole = 'admin' | 'inspector' | 'worker' | 'vendor'
+
+/** @deprecated — kept for backward compat during migration. Use TeamMemberRole. */
+export type LegacyTeamMemberRole = 'admin' | 'dispatcher' | 'field_tech'
 export type JobStatus = 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'on_hold'
 export type DispatchStatus = 'unscheduled' | 'scheduled' | 'dispatched' | 'en_route'
 
@@ -20,7 +23,9 @@ export type Database = {
           id: string
           email: string
           full_name: string | null
-          role: TeamMemberRole
+          /** @deprecated Use `roles` instead. Kept during migration. */
+          role: string
+          roles: TeamMemberRole[]
           phone: string | null
           is_active: boolean
           avatar_url: string | null
@@ -31,14 +36,18 @@ export type Database = {
           id: string
           email: string
           full_name?: string | null
-          role?: TeamMemberRole
+          /** @deprecated Use `roles` instead. */
+          role?: string
+          roles?: TeamMemberRole[]
           phone?: string | null
           is_active?: boolean
           avatar_url?: string | null
         }
         Update: {
           full_name?: string | null
-          role?: TeamMemberRole
+          /** @deprecated Use `roles` instead. */
+          role?: string
+          roles?: TeamMemberRole[]
           phone?: string | null
           is_active?: boolean
           avatar_url?: string | null

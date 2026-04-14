@@ -10,6 +10,10 @@ import type { TeamMember } from '@/types/database'
 
 const roleLabel: Record<string, string> = {
   admin: 'Admin',
+  inspector: 'Inspector',
+  worker: 'Worker',
+  vendor: 'Vendor',
+  // Legacy values — shown as-is if still in the DB
   dispatcher: 'Dispatcher',
   field_tech: 'Field Tech',
 }
@@ -86,9 +90,19 @@ export function EmployeeTable({ employees, currentUserId }: EmployeeTableProps) 
                 </td>
                 <td className="px-5 py-3 text-slate-500 hidden md:table-cell">{emp.email}</td>
                 <td className="px-5 py-3">
-                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-medium capitalize">
-                    {roleLabel[emp.role] || emp.role}
-                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {(emp.roles ?? []).map((r) => (
+                      <span
+                        key={r}
+                        className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-medium"
+                      >
+                        {roleLabel[r] || r}
+                      </span>
+                    ))}
+                    {(!emp.roles || emp.roles.length === 0) && (
+                      <span className="text-xs text-slate-400 italic">No roles</span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-5 py-3">
                   <span

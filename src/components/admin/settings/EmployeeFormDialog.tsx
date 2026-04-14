@@ -13,16 +13,16 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { updateEmployee } from '@/lib/actions/employee-actions'
 import { Loader2 } from 'lucide-react'
-import type { TeamMember } from '@/types/database'
+import type { TeamMember, TeamMemberRole } from '@/types/database'
+
+const ROLE_OPTIONS: { value: TeamMemberRole; label: string }[] = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'inspector', label: 'Inspector' },
+  { value: 'worker', label: 'Worker' },
+  { value: 'vendor', label: 'Vendor' },
+]
 
 interface EmployeeFormDialogProps {
   mode: 'add' | 'edit'
@@ -39,7 +39,7 @@ export function EmployeeFormDialog({
 }: EmployeeFormDialogProps) {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState<string>('field_tech')
+  const [roles, setRoles] = useState<TeamMemberRole[]>([])
   const [phone, setPhone] = useState('')
   const [isActive, setIsActive] = useState(true)
   const [error, setError] = useState('')
@@ -51,13 +51,13 @@ export function EmployeeFormDialog({
       if (mode === 'edit' && employee) {
         setFullName(employee.full_name || '')
         setEmail(employee.email)
-        setRole(employee.role)
+        setRoles(employee.roles ?? [])
         setPhone(employee.phone || '')
         setIsActive(employee.is_active)
       } else {
         setFullName('')
         setEmail('')
-        setRole('field_tech')
+        setRoles([])
         setPhone('')
         setIsActive(true)
       }
@@ -65,9 +65,19 @@ export function EmployeeFormDialog({
     }
   }, [open, mode, employee])
 
+  function toggleRole(role: TeamMemberRole) {
+    setRoles((prev) =>
+      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
+    )
+  }
+
   const handleSubmit = () => {
     if (mode === 'add' && !email.trim()) {
       setError('Email is required')
+      return
+    }
+    if (roles.length === 0) {
+      setError('At least one role must be selected')
       return
     }
 
@@ -80,7 +90,7 @@ export function EmployeeFormDialog({
             body: JSON.stringify({
               email: email.trim(),
               full_name: fullName.trim() || null,
-              role,
+              roles,
               phone: phone.trim() || null,
             }),
           })
@@ -92,7 +102,7 @@ export function EmployeeFormDialog({
         } else if (employee) {
           await updateEmployee(employee.id, {
             full_name: fullName.trim() || undefined,
-            role: role as TeamMember['role'],
+            roles,
             phone: phone.trim() || undefined,
             is_active: isActive,
           })
@@ -141,18 +151,31 @@ export function EmployeeFormDialog({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Role</Label>
-            <Select value={role} onValueChange={(val) => { if (val) setRole(val) }}>
-              <SelectTrigger className="w-full text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="dispatcher">Dispatcher</SelectItem>
-                <SelectItem value="field_tech">Field Tech</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-2">
+            <Label>Roles</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {ROLE_OPTIONS.map((opt) => (
+                <label
+                  key={opt.value}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-md border-2 cursor-pointer transition-colors ${
+                    roles.includes(opt.value)
+                      ? 'border-[#2563EB] bg-blue-50'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={roles.includes(opt.value)}
+                    onChange={() => toggleRole(opt.value)}
+                    className="h-4 w-4 rounded border-slate-300 accent-[#2563EB]"
+                  />
+                  <span className="text-sm font-medium text-slate-700">{opt.label}</span>
+                </label>
+              ))}
+            </div>
+            {roles.length === 0 && (
+              <p className="text-xs text-slate-400">Select at least one role</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -189,7 +212,7 @@ export function EmployeeFormDialog({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isPending || (mode === 'add' && !email.trim())}
+            disabled={isPending || (mode === 'add' && !email.trim()) || roles.length === 0}
             className="bg-[#2563EB] border-2 border-black text-white font-bold"
           >
             {isPending ? (

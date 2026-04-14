@@ -18,8 +18,16 @@ import type { TeamMember } from '@/types/database'
 
 const roleLabel: Record<string, string> = {
   admin: 'Admin',
+  inspector: 'Inspector',
+  worker: 'Worker',
+  vendor: 'Vendor',
   dispatcher: 'Dispatcher',
   field_tech: 'Field Tech',
+}
+
+function formatRoles(roles: string[] | undefined | null, fallbackRole?: string): string {
+  const list = roles && roles.length > 0 ? roles : fallbackRole ? [fallbackRole] : []
+  return list.map((r) => roleLabel[r] || r).join(' / ') || 'Team Member'
 }
 
 interface AdminHeaderProps {
@@ -67,7 +75,7 @@ export function AdminHeader({ profile }: AdminHeaderProps) {
                 <p className="text-sm font-medium text-slate-800 leading-tight">
                   {profile.full_name || 'Team Member'}
                 </p>
-                <p className="text-xs text-slate-500 leading-tight">{roleLabel[profile.role] || profile.role}</p>
+                <p className="text-xs text-slate-500 leading-tight">{formatRoles(profile.roles, profile.role)}</p>
               </div>
             </div>
           </DropdownMenuTrigger>
@@ -110,7 +118,7 @@ export function AdminHeader({ profile }: AdminHeaderProps) {
             <p className="text-sm font-medium text-slate-800 leading-tight">
               {profile.full_name || 'Team Member'}
             </p>
-            <p className="text-xs text-slate-500 leading-tight">{roleLabel[profile.role] || profile.role}</p>
+            <p className="text-xs text-slate-500 leading-tight">{formatRoles(profile.roles, profile.role)}</p>
           </div>
         </div>
       )}
