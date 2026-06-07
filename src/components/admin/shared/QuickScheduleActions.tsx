@@ -20,7 +20,7 @@ export function QuickScheduleActions({
 }: QuickScheduleActionsProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const { toastMessage, showToast, hideToast } = useScheduleToast()
+  const { toast, showToast, hideToast } = useScheduleToast()
 
   async function handleUnschedule() {
     startTransition(async () => {
@@ -55,7 +55,7 @@ export function QuickScheduleActions({
         </button>
       )}
 
-      {toastMessage && <ScheduleToast message={toastMessage} onDismiss={hideToast} />}
+      {toast && <ScheduleToast message={toast.message} variant={toast.variant} onDismiss={hideToast} />}
     </div>
   )
 }

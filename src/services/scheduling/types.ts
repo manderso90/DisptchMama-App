@@ -98,4 +98,6 @@ export interface ApplyResult {
   success: boolean
   conflict?: TimeConflict[]
   error?: string
+  /** Set when the schedule saved locally but the GS Retrofit write-back failed. */
+  gsRetrofitWarning?: string
 }

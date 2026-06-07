@@ -16,15 +16,9 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { scheduleInspection } from '@/services/integrations/gsretrofit'
+import type { GsRetrofitWriteback } from '@/lib/scheduling/writeback-result'
 
-/** Outcome of a write-back attempt. Advisory — local scheduling is authoritative. */
-export type GsRetrofitWriteback =
-  /** Job isn't linked to a GS Retrofit inspection request (e.g. a manual job). No POST made. */
-  | { attempted: false; reason: 'job-not-linked' }
-  /** POST succeeded. */
-  | { attempted: true; ok: true; gsrInspectionRequestId: number }
-  /** Attempted but failed — local schedule still stands. */
-  | { attempted: true; ok: false; reason: 'inspector-not-linked' | 'api-error'; message: string }
+export type { GsRetrofitWriteback }
 
 export interface WriteBackParams {
   jobId: string

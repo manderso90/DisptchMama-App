@@ -3,30 +3,36 @@
 import { useState, useCallback, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 
+export type ToastVariant = 'success' | 'error'
+
 interface ScheduleToastProps {
   message: string
+  variant?: ToastVariant
   onUndo?: () => void
   onDismiss: () => void
 }
 
-export function ScheduleToast({ message, onUndo, onDismiss }: ScheduleToastProps) {
+export function ScheduleToast({ message, variant = 'success', onUndo, onDismiss }: ScheduleToastProps) {
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {
+    // Errors linger longer so they're not missed.
+    const duration = variant === 'error' ? 6000 : 3000
     const timer = setTimeout(() => {
       setVisible(false)
       setTimeout(onDismiss, 200) // wait for fade-out animation
-    }, 3000)
+    }, duration)
     return () => clearTimeout(timer)
-  }, [onDismiss])
+  }, [onDismiss, variant])
 
   return (
     <div
       className={cn(
         'fixed bottom-6 left-1/2 -translate-x-1/2 z-50',
-        'bg-[#FDE047] text-black border-2 border-black px-5 py-2.5 rounded-lg neo-shadow-sm',
+        'border-2 border-black px-5 py-2.5 rounded-lg neo-shadow-sm',
         'text-sm font-bold flex items-center gap-3',
         'transition-all duration-200',
+        variant === 'error' ? 'bg-[#F87171] text-black' : 'bg-[#FDE047] text-black',
         visible
           ? 'opacity-100 translate-y-0'
           : 'opacity-0 translate-y-2'
@@ -53,15 +59,15 @@ export function ScheduleToast({ message, onUndo, onDismiss }: ScheduleToastProps
  * Returns { toastMessage, showToast, hideToast } for easy use in any component.
  */
 export function useScheduleToast() {
-  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ message: string; variant: ToastVariant } | null>(null)
 
-  const showToast = useCallback((message: string) => {
-    setToastMessage(message)
+  const showToast = useCallback((message: string, variant: ToastVariant = 'success') => {
+    setToast({ message, variant })
   }, [])
 
   const hideToast = useCallback(() => {
-    setToastMessage(null)
+    setToast(null)
   }, [])
 
-  return { toastMessage, showToast, hideToast }
+  return { toast, showToast, hideToast }
 }
