@@ -125,6 +125,7 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
   const [suggestions, setSuggestions] = useState<SuggestionResult | null>(null)
   const [conflicts, setConflicts] = useState<TimeConflict[] | null>(null)
   const [applySuccess, setApplySuccess] = useState(false)
+  const [gsrWarning, setGsrWarning] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [applyingId, setApplyingId] = useState<string | null>(null)
@@ -159,6 +160,7 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
     setError(null)
     setConflicts(null)
     setApplySuccess(false)
+    setGsrWarning(null)
     setApplyingId(suggestion.inspectorId + suggestion.startTime)
     startTransition(async () => {
       try {
@@ -178,6 +180,7 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
           }
         } else {
           setApplySuccess(true)
+          setGsrWarning(result.gsRetrofitWarning ?? null)
           setSuggestions(null)
           router.refresh()
         }
@@ -250,6 +253,12 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
             {applySuccess && (
               <div className="text-sm text-green-700 bg-green-50 border border-green-300 rounded-lg p-3">
                 Suggestion applied successfully. Job has been scheduled.
+              </div>
+            )}
+
+            {applySuccess && gsrWarning && (
+              <div className="text-sm text-red-700 bg-red-50 border border-red-300 rounded-lg p-3">
+                Scheduled in DisptchMama, but {gsrWarning}. The GS Retrofit appointment was not updated.
               </div>
             )}
 

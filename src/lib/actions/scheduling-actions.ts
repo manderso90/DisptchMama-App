@@ -19,6 +19,7 @@ import type {
   JobToSchedule,
 } from '@/services/scheduling'
 import { updateSchedule } from './schedule-mutations'
+import { gsRetrofitWarning } from '@/lib/scheduling/writeback-result'
 
 // ---------------------------------------------------------------------------
 // Context builder — bridges Supabase data into pure SchedulingContext
@@ -191,7 +192,7 @@ export async function applySuggestion(
   }
 
   // --- No conflicts — apply the schedule ---
-  await updateSchedule({
+  const result = await updateSchedule({
     jobId,
     assignedTo: inspectorId,
     scheduledDate: date,
@@ -203,5 +204,5 @@ export async function applySuggestion(
   revalidatePath(`/admin/jobs/${jobId}`)
   revalidatePath('/admin/dispatch')
 
-  return { success: true }
+  return { success: true, gsRetrofitWarning: gsRetrofitWarning(result.gsRetrofit) ?? undefined }
 }

@@ -11,6 +11,7 @@ import { scheduleFromDispatch, updateJobTime } from '@/lib/actions/dispatch-acti
 import { updateSchedule } from '@/lib/actions/schedule-mutations'
 import { useScheduleSync } from '@/lib/hooks/use-schedule-sync'
 import { ScheduleToast, useScheduleToast } from '@/components/admin/shared/ScheduleToast'
+import { gsRetrofitWarning } from '@/lib/scheduling/writeback-result'
 import { cn } from '@/lib/utils'
 import type { DispatchInspector, DispatchJob, UnscheduledJob } from '@/lib/queries/dispatch'
 
@@ -40,7 +41,17 @@ export function DispatchClient({
   // DnD state
   const [activeDrag, setActiveDrag] = useState<DragItem | null>(null)
   const [isScheduling, setIsScheduling] = useState(false)
-  const { toastMessage, showToast, hideToast } = useScheduleToast()
+  const { toast, showToast, hideToast } = useScheduleToast()
+
+  // Show a success toast, or an error toast if the GS Retrofit write-back failed.
+  function notifyScheduled(successMessage: string, gsRetrofit?: Parameters<typeof gsRetrofitWarning>[0]) {
+    const warning = gsRetrofitWarning(gsRetrofit)
+    if (warning) {
+      showToast(`${successMessage} — ${warning}`, 'error')
+    } else {
+      showToast(successMessage)
+    }
+  }
 
   // Edit time modal state
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -101,12 +112,12 @@ export function DispatchClient({
       const job = currentDrag.job
       setIsScheduling(true)
       try {
-        await scheduleFromDispatch(job.id, droppedInspectorId, currentDate, droppedTime)
+        const res = await scheduleFromDispatch(job.id, droppedInspectorId, currentDate, droppedTime)
         const inspector = inspectors.find((i) => i.id === droppedInspectorId)
         const [dh, dm] = droppedTime.split(':').map(Number)
         const dp = dh >= 12 ? 'PM' : 'AM'
         const displayTime = `${dh % 12 || 12}:${String(dm).padStart(2, '0')} ${dp}`
-        showToast(`Scheduled at ${displayTime} with ${inspector?.full_name ?? 'inspector'}`)
+        notifyScheduled(`Scheduled at ${displayTime} with ${inspector?.full_name ?? 'inspector'}`, res.gsRetrofit)
         startTransition(() => router.refresh())
       } catch (err) {
         showToast(err instanceof Error ? err.message : 'Failed to schedule')
@@ -118,21 +129,20 @@ export function DispatchClient({
       const { job, inspectorId: fromInspectorId } = currentDrag
       setIsScheduling(true)
       try {
-        await updateSchedule({
+        const res = await updateSchedule({
           jobId: job.id,
           assignedTo: droppedInspectorId,
           scheduledTime: droppedTime,
         })
-        const fromInspector = inspectors.find((i) => i.id === fromInspectorId)
         const toInspector = inspectors.find((i) => i.id === droppedInspectorId)
         const [dh, dm] = droppedTime.split(':').map(Number)
         const dp = dh >= 12 ? 'PM' : 'AM'
         const displayTime = `${dh % 12 || 12}:${String(dm).padStart(2, '0')} ${dp}`
 
         if (fromInspectorId !== droppedInspectorId) {
-          showToast(`Moved to ${toInspector?.full_name ?? 'inspector'} at ${displayTime}`)
+          notifyScheduled(`Moved to ${toInspector?.full_name ?? 'inspector'} at ${displayTime}`, res.gsRetrofit)
         } else {
-          showToast(`Rescheduled to ${displayTime}`)
+          notifyScheduled(`Rescheduled to ${displayTime}`, res.gsRetrofit)
         }
         startTransition(() => router.refresh())
       } catch (err) {
@@ -158,9 +168,9 @@ export function DispatchClient({
     setEditError(null)
 
     try {
-      await updateJobTime(editJob.id, editTime)
+      const res = await updateJobTime(editJob.id, editTime)
       setEditModalOpen(false)
-      showToast(`Time updated to ${editTime}`)
+      notifyScheduled(`Time updated to ${editTime}`, res.gsRetrofit)
       startTransition(() => router.refresh())
     } catch (err) {
       setEditError(err instanceof Error ? err.message : 'Failed to update time')
@@ -210,8 +220,8 @@ export function DispatchClient({
       )}
 
       {/* Toast notification */}
-      {toastMessage && (
-        <ScheduleToast message={toastMessage} onDismiss={hideToast} />
+      {toast && (
+        <ScheduleToast message={toast.message} variant={toast.variant} onDismiss={hideToast} />
       )}
 
       {/* Edit time modal */}
