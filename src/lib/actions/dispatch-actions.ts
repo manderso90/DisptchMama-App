@@ -1,6 +1,6 @@
 'use server'
 
-import { updateSchedule } from './schedule-mutations'
+import { updateSchedule, type ScheduleResult } from './schedule-mutations'
 
 export async function scheduleFromDispatch(
   jobId: string,
@@ -8,8 +8,8 @@ export async function scheduleFromDispatch(
   scheduledDate: string,
   scheduledTime: string,
   durationOverride?: number
-) {
-  await updateSchedule({
+): Promise<ScheduleResult> {
+  return updateSchedule({
     jobId,
     assignedTo: inspectorId,
     scheduledDate,
@@ -21,8 +21,8 @@ export async function scheduleFromDispatch(
 export async function updateJobTime(
   jobId: string,
   scheduledTime: string
-) {
-  await updateSchedule({
+): Promise<ScheduleResult> {
+  return updateSchedule({
     jobId,
     scheduledTime,
   })

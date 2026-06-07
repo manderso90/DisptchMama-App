@@ -62,6 +62,8 @@ export type Database = {
           is_active: boolean
           region: string
           notes: string | null
+          /** GS Retrofit canonical numeric inspector id. null = not yet linked. */
+          gsretrofit_inspector_id: number | null
           created_at: string
           updated_at: string
         }
@@ -73,6 +75,7 @@ export type Database = {
           is_active?: boolean
           region?: string
           notes?: string | null
+          gsretrofit_inspector_id?: number | null
         }
         Update: {
           full_name?: string
@@ -81,6 +84,7 @@ export type Database = {
           is_active?: boolean
           region?: string
           notes?: string | null
+          gsretrofit_inspector_id?: number | null
         }
       }
       jobs: {
@@ -109,6 +113,8 @@ export type Database = {
           last_reassigned_by: string | null
           last_reassigned_at: string | null
           schedule_notes: string | null
+          /** GS Retrofit inspection-request id this job came from. null = not from GS Retrofit. */
+          gsretrofit_inspection_request_id: number | null
           created_at: string
           updated_at: string
         }
@@ -134,6 +140,7 @@ export type Database = {
           has_lockbox?: boolean
           notes?: string | null
           schedule_notes?: string | null
+          gsretrofit_inspection_request_id?: number | null
         }
         Update: {
           title?: string
@@ -158,6 +165,7 @@ export type Database = {
           last_reassigned_by?: string | null
           last_reassigned_at?: string | null
           schedule_notes?: string | null
+          gsretrofit_inspection_request_id?: number | null
         }
       }
       job_status_history: {

@@ -45,6 +45,7 @@ create table public.inspectors (
   is_active boolean not null default true,
   region text not null default 'Valley',
   notes text,
+  gsretrofit_inspector_id integer unique,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -97,6 +98,7 @@ create table public.jobs (
   last_reassigned_at timestamptz,
   has_lockbox boolean not null default false,
   schedule_notes text,
+  gsretrofit_inspection_request_id integer unique,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

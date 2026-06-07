@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { writeBackSchedule, type GsRetrofitWriteback } from './gsretrofit-writeback'
 
 export interface ScheduleUpdate {
   jobId: string
@@ -17,6 +18,8 @@ export interface ScheduleResult {
   updatedFields: Record<string, unknown>
   statusChanged: boolean
   newStatus?: string
+  /** Result of the GS Retrofit write-back, when the job is fully scheduled. Advisory. */
+  gsRetrofit?: GsRetrofitWriteback
 }
 
 const SCHEDULING_PATHS = [
@@ -36,11 +39,14 @@ export async function updateSchedule(update: ScheduleUpdate): Promise<ScheduleRe
   // Fetch current job state
   const { data: current, error: fetchError } = await supabase
     .from('jobs')
-    .select('status, assigned_to, scheduled_date, scheduled_time, estimated_duration_minutes')
+    .select('status, assigned_to, scheduled_date, scheduled_time, estimated_duration_minutes, gsretrofit_inspection_request_id')
     .eq('id', update.jobId)
     .single()
 
   if (fetchError || !current) throw new Error('Job not found')
+
+  // Whether this job originated from GS Retrofit (system of record).
+  const isGsrLinked = current.gsretrofit_inspection_request_id != null
 
   // Build update object — only include fields that were explicitly passed
   const updateData: Record<string, unknown> = {}
@@ -82,10 +88,13 @@ export async function updateSchedule(update: ScheduleUpdate): Promise<ScheduleRe
     updateData.last_reassigned_at = new Date().toISOString()
   }
 
-  // Auto-advance status to confirmed if scheduling from early status and fully scheduled
+  // Auto-advance status to confirmed if scheduling from early status and fully
+  // scheduled — but ONLY for local (non-GS-Retrofit) jobs. For GS Retrofit jobs,
+  // confirmation is GS Retrofit's customer-facing workflow; a DisptchMama
+  // assignment is internal/pending and must not flip the customer-facing status.
   let statusChanged = false
   let newStatus: string | undefined
-  if (fullyScheduled && EARLY_STATUSES.includes(current.status)) {
+  if (!isGsrLinked && fullyScheduled && EARLY_STATUSES.includes(current.status)) {
     updateData.status = 'confirmed'
     statusChanged = true
     newStatus = 'confirmed'
@@ -110,6 +119,22 @@ export async function updateSchedule(update: ScheduleUpdate): Promise<ScheduleRe
     })
   }
 
+  // Write the assignment back to GS Retrofit when the job is fully scheduled.
+  // Advisory + graceful: a failure here does not roll back the local schedule.
+  // writeBackSchedule no-ops for jobs not linked to a GS Retrofit request.
+  let gsRetrofit: GsRetrofitWriteback | undefined
+  if (fullyScheduled) {
+    gsRetrofit = await writeBackSchedule({
+      jobId: update.jobId,
+      gsrInspectionRequestId: current.gsretrofit_inspection_request_id,
+      inspectorUuid: effectiveMemberId as string,
+      scheduledDate: effectiveDate as string,
+      scheduledTime: effectiveTime as string,
+      changedBy: user.id,
+      currentStatus: current.status,
+    })
+  }
+
   // Revalidate scheduling-related paths
   for (const path of SCHEDULING_PATHS) {
     revalidatePath(path)
@@ -120,5 +145,6 @@ export async function updateSchedule(update: ScheduleUpdate): Promise<ScheduleRe
     updatedFields: updateData,
     statusChanged,
     newStatus,
+    gsRetrofit,
   }
 }
