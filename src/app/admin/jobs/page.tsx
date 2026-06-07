@@ -1,6 +1,7 @@
 import { getJobsList } from '@/lib/queries/jobs'
 import { JobsTable } from '@/components/admin/jobs/JobsTable'
 import { SyncFromGsRetrofitButton } from '@/components/admin/jobs/SyncFromGsRetrofitButton'
+import { JobsLiveRefresh } from '@/components/admin/jobs/JobsLiveRefresh'
 import Link from 'next/link'
 
 export default async function JobsPage() {
@@ -8,6 +9,7 @@ export default async function JobsPage() {
 
   return (
     <div className="space-y-4">
+      <JobsLiveRefresh />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900 font-[Syne]">Jobs</h1>
