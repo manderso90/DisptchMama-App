@@ -1,5 +1,6 @@
 import { getJobsList } from '@/lib/queries/jobs'
 import { JobsTable } from '@/components/admin/jobs/JobsTable'
+import { SyncFromGsRetrofitButton } from '@/components/admin/jobs/SyncFromGsRetrofitButton'
 import Link from 'next/link'
 
 export default async function JobsPage() {
@@ -14,12 +15,15 @@ export default async function JobsPage() {
             All jobs in the system. Create new jobs to populate the dispatch board.
           </p>
         </div>
-        <Link
-          href="/admin/jobs/new"
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-black bg-[#FDE047] border-2 border-black rounded-md neo-shadow-sm hover:translate-y-0.5 hover:shadow-none transition-all"
-        >
-          + New Job
-        </Link>
+        <div className="flex items-center gap-3">
+          <SyncFromGsRetrofitButton />
+          <Link
+            href="/admin/jobs/new"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-black bg-[#FDE047] border-2 border-black rounded-md neo-shadow-sm hover:translate-y-0.5 hover:shadow-none transition-all"
+          >
+            + New Job
+          </Link>
+        </div>
       </div>
 
       <JobsTable jobs={jobs} />
