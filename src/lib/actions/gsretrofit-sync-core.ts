@@ -14,10 +14,30 @@ import { mapInspectionRequestToJob } from '@/services/integrations/gsretrofit/ma
 import { isValidTransition, TERMINAL_STATUSES } from '@/services/job-lifecycle'
 import type { JobStatus } from '@/types/database'
 
-/** How far back to sync, in days. One-line change to widen/narrow the window. */
-export const SYNC_WINDOW_DAYS = 10
+/**
+ * How far back to sync, in days. One-line change to widen/narrow the window.
+ * The GS Retrofit dataset is mostly deep history (2022–2025 completed work); the
+ * actively-worked set is all updated within the last few weeks. 30 days captures
+ * the live queue with margin while keeping years of stale records out.
+ */
+export const SYNC_WINDOW_DAYS = 30
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
+
+/**
+ * Parse a GS Retrofit timestamp into epoch ms. The live API returns
+ * Postgres-style timestamps ("2026-06-09 05:44:46.37765+00" — note the space
+ * separator and the short "+00" offset) which `Date` won't reliably parse as-is.
+ * Returns NaN for missing/unparseable input.
+ */
+function parseGsrTimestamp(ts: string | null | undefined): number {
+  if (!ts) return NaN
+  // Space → 'T', and pad a bare 2-digit offset ("+00" / "-07") to "+00:00" so
+  // Date.parse accepts it. Already-full offsets ("+00:00", "-0700", "Z") are
+  // left untouched. Handle either sign so the parse never silently NaNs.
+  const normalized = ts.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')
+  return Date.parse(normalized)
+}
 
 export interface SyncResult {
   ok: boolean
@@ -40,14 +60,16 @@ export async function runInspectionSync(
 
   // 1. Pull inspection requests and apply the recency window.
   // NOTE: GS Retrofit's `updated_since` query param currently returns HTTP 500,
-  // so we fetch all and window client-side on `updated_at`. The dataset is small
+  // so we fetch all and window client-side on `updatedAt`. The dataset is small
   // (~230); revisit if it grows or the server-side filter is fixed.
-  const since = new Date(Date.now() - SYNC_WINDOW_DAYS * MS_PER_DAY).toISOString()
+  const sinceMs = Date.now() - SYNC_WINDOW_DAYS * MS_PER_DAY
   const reqResult = await getInspectionRequests()
   if (!reqResult.ok) {
     return { ok: false, ...empty, error: reqResult.error.message }
   }
-  const requests = reqResult.data.filter((r) => r.updated_at >= since)
+  const requests = reqResult.data.filter(
+    (r) => parseGsrTimestamp(r.updatedAt) >= sinceMs
+  )
 
   // 2. Build GS Retrofit inspector id -> local inspector UUID reverse map.
   const { data: inspectors } = await supabase

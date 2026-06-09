@@ -69,8 +69,8 @@ export function mapInspectionRequestToJob(
   localInspectorIdByGsrId: Map<number, string>
 ): MappedJob {
   const assignedTo =
-    req.assigned_inspector_id != null
-      ? localInspectorIdByGsrId.get(req.assigned_inspector_id) ?? null
+    req.assignedInspectorId != null
+      ? localInspectorIdByGsrId.get(req.assignedInspectorId) ?? null
       : null
 
   // GS Retrofit notes + access annotation (no dedicated access column locally).
@@ -83,16 +83,16 @@ export function mapInspectionRequestToJob(
   // the source link where the dispatcher can see them. requested_time can be
   // freeform (e.g. "2:00/DAVID"), so we surface it rather than guess a preference.
   const scheduleNotes =
-    `GS Retrofit #${req.id} · requested ${normalizeDate(req.requested_date) ?? '—'} ${req.requested_time ?? ''}`.trim() +
-    (req.source_url ? ` · ${req.source_url}` : '')
+    `GS Retrofit #${req.id} · requested ${normalizeDate(req.requestedDate) ?? '—'} ${req.requestedTime ?? ''}`.trim() +
+    (req.sourceUrl ? ` · ${req.sourceUrl}` : '')
 
   return {
     title: mapType(req.type),
-    address: req.property_address,
+    address: req.propertyAddress,
     city: req.city,
     state: req.state,
     zip_code: req.zip,
-    requested_date: normalizeDate(req.requested_date),
+    requested_date: normalizeDate(req.requestedDate),
     requested_time_preference: null,
     status: mapGsrStatusToLocal(req.status),
     assigned_to: assignedTo,

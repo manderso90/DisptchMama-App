@@ -33,7 +33,7 @@ export function DispatchClient({
   unscheduledJobs,
 }: DispatchClientProps) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
 
   // Realtime sync across tabs
   useScheduleSync()
@@ -181,11 +181,23 @@ export function DispatchClient({
 
   const editInspector = inspectors.find((i) => i.id === editInspectorId)
 
-  // Group inspectors by region for the timeline
-  const regionGroups = [
-    { region: 'Valley', inspectors: inspectors.filter(i => i.region === 'Valley') },
-    { region: 'Los Angeles', inspectors: inspectors.filter(i => i.region === 'Los Angeles') },
-  ].filter(g => g.inspectors.length > 0)
+  // Group inspectors by region for the side-by-side timeline columns. Built
+  // dynamically (Valley, then Los Angeles, then any other region) so no
+  // inspector is ever dropped if a new region appears.
+  const REGION_ORDER = ['Valley', 'Los Angeles']
+  const byRegion = new Map<string, DispatchInspector[]>()
+  for (const insp of inspectors) {
+    const region = insp.region || 'Valley'
+    if (!byRegion.has(region)) byRegion.set(region, [])
+    byRegion.get(region)!.push(insp)
+  }
+  const regionGroups = [...byRegion.keys()]
+    .sort((a, b) => {
+      const ia = REGION_ORDER.indexOf(a)
+      const ib = REGION_ORDER.indexOf(b)
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.localeCompare(b)
+    })
+    .map((region) => ({ region, inspectors: byRegion.get(region)! }))
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] gap-4">
@@ -195,7 +207,7 @@ export function DispatchClient({
       {/* Timeline + DnD context */}
       <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex-1 min-h-0">
-          <TimelineGrid regionGroups={regionGroups} onEditJob={handleEditJob} />
+          <TimelineGrid regionGroups={regionGroups} onEditJob={handleEditJob} isToday={isToday} />
         </div>
         <UnscheduledQueue jobs={unscheduledJobs} />
 
