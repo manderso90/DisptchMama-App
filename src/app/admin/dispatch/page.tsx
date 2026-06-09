@@ -1,7 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
-import { format } from 'date-fns'
 import { getDispatchTimeline, getUnscheduledJobs } from '@/lib/queries/dispatch'
 import { DispatchClient } from '@/components/admin/dispatch/DispatchClient'
+
+// GS Retrofit operates in the Pacific timezone (Valley / Los Angeles regions),
+// and scheduled_time values are stored as Pacific wall-clock. Compute "today"
+// in that zone so isToday — which drives the hide-past window and now-line —
+// doesn't flip to false when the Vercel server's UTC clock rolls past midnight
+// during the late-afternoon work hour. en-CA gives YYYY-MM-DD.
+const BUSINESS_TZ = 'America/Los_Angeles'
+function todayInBusinessTz(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: BUSINESS_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
 
 export default async function DispatchPage({
   searchParams,
@@ -9,7 +23,7 @@ export default async function DispatchPage({
   searchParams: Promise<{ date?: string }>
 }) {
   const params = await searchParams
-  const today = format(new Date(), 'yyyy-MM-dd')
+  const today = todayInBusinessTz()
   const currentDate = params.date || today
   const isToday = currentDate === today
   const supabase = await createClient()

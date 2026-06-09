@@ -20,28 +20,36 @@ export type GsrInspectionStatus =
   | 'on hold'
   | 'info needed'
 
-/** GET /inspection-requests — one open/in-flight inspection request. */
+/**
+ * GET /inspection-requests — one open/in-flight inspection request.
+ *
+ * NOTE: the LIVE API returns these fields in **camelCase** (propertyAddress,
+ * requestedDate, updatedAt, assignedInspectorId, …), NOT the snake_case shown in
+ * the OpenAPI doc — same discrepancy already noted on GsrScheduleStop. We match
+ * the live response. Reading snake_case here silently yields `undefined` and is
+ * what broke the inbound sync (the recency window dropped every request).
+ */
 export interface GsrInspectionRequest {
   id: number
   type: string
-  property_address: string
+  propertyAddress: string
   city: string
   state: string
   zip: string
-  /** Live API returns a full ISO 8601 timestamp (doc says YYYY-MM-DD). Normalize before date-equality. */
-  requested_date: string
+  /** Live API returns a full timestamp (doc says YYYY-MM-DD). Normalize before date-equality. */
+  requestedDate: string
   /** Usually HH:mm, but can be freeform (e.g. "2:00/DAVID"). */
-  requested_time: string
+  requestedTime: string
   status: GsrInspectionStatus
-  source_url: string
+  sourceUrl: string
   access: string
   notes: string | null
-  /** ISO 8601 timestamp */
-  created_at: string
-  /** ISO 8601 timestamp */
-  updated_at: string
+  /** Postgres-style timestamp, e.g. "2026-06-09 05:44:46.37765+00". */
+  createdAt: string
+  /** Postgres-style timestamp, e.g. "2026-06-09 05:44:46.37765+00". */
+  updatedAt: string
   /** GS Retrofit numeric inspector id, or null if unassigned. */
-  assigned_inspector_id: number | null
+  assignedInspectorId: number | null
 }
 
 /** GET /inspectors — one canonical roster entry. */
