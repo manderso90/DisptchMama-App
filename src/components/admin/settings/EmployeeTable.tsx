@@ -24,7 +24,6 @@ interface EmployeeTableProps {
 }
 
 export function EmployeeTable({ employees, currentUserId }: EmployeeTableProps) {
-  const [addOpen, setAddOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState<TeamMember | null>(null)
@@ -49,13 +48,17 @@ export function EmployeeTable({ employees, currentUserId }: EmployeeTableProps) 
               Manage your team&apos;s access and roles.
             </p>
           </div>
+          {/* Team-member invites aren't wired up yet (no backend invite flow),
+              so the add button is disabled to avoid a confusing error. Inspectors
+              are managed separately on the Inspectors page. */}
           <Button
             size="sm"
-            className="bg-[#FDE047] text-black border-2 border-black font-bold text-sm"
-            onClick={() => setAddOpen(true)}
+            disabled
+            title="Team member invites are coming soon"
+            className="bg-slate-100 text-slate-400 border-2 border-slate-300 font-bold text-sm cursor-not-allowed"
           >
             <Plus className="w-4 h-4 mr-1.5" />
-            Add Team Member
+            Add Team Member (coming soon)
           </Button>
         </div>
 
@@ -145,12 +148,10 @@ export function EmployeeTable({ employees, currentUserId }: EmployeeTableProps) 
 
         {employees.length === 0 && (
           <div className="px-5 py-8 text-center text-sm text-slate-400">
-            No team members yet. Click &quot;Add Team Member&quot; to invite your first team member.
+            No team members yet. Team member invites are coming soon.
           </div>
         )}
       </div>
-
-      <EmployeeFormDialog mode="add" open={addOpen} onOpenChange={setAddOpen} />
 
       {selectedEmployee && (
         <>
