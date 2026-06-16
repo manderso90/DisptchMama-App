@@ -30,7 +30,7 @@ export default async function DispatchPage({
 
   const [inspectors, unscheduledJobs] = await Promise.all([
     getDispatchTimeline(supabase, currentDate),
-    getUnscheduledJobs(supabase),
+    getUnscheduledJobs(supabase, today),
   ])
 
   return (

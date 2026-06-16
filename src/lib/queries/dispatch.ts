@@ -103,7 +103,22 @@ export interface UnscheduledJob {
   has_lockbox: boolean
 }
 
-export async function getUnscheduledJobs(supabase: AnyClient): Promise<UnscheduledJob[]> {
+/**
+ * Jobs that still need a slot on the board. Two groups:
+ *   - pending jobs that aren't fully placed (no date or no inspector), and
+ *   - confirmed GS Retrofit appointments we couldn't auto-place (freeform time
+ *     or an unmapped inspector). Without this second group those confirmed jobs
+ *     would be invisible — not on the timeline (no scheduled_date) and excluded
+ *     from a pending-only queue — which is exactly what hid them before.
+ *
+ * Confirmed jobs are floored at `today` so the queue stays focused on upcoming
+ * work rather than years of historical confirmed records. `today` is the
+ * business-timezone date (passed in from the page).
+ */
+export async function getUnscheduledJobs(
+  supabase: AnyClient,
+  today: string
+): Promise<UnscheduledJob[]> {
   const { data, error } = await supabase
     .from('jobs')
     .select(
@@ -113,8 +128,10 @@ export async function getUnscheduledJobs(supabase: AnyClient): Promise<Unschedul
       client_name, address, city, zip_code, has_lockbox
     `
     )
-    .in('status', ['pending'])
-    .or('scheduled_date.is.null,assigned_to.is.null')
+    .or(
+      `and(status.eq.pending,or(scheduled_date.is.null,assigned_to.is.null)),` +
+        `and(status.eq.confirmed,scheduled_date.is.null,or(requested_date.gte.${today},requested_date.is.null))`
+    )
     .order('requested_date', { ascending: true, nullsFirst: false })
 
   if (error) throw error
