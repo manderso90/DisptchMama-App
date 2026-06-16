@@ -149,6 +149,23 @@ export async function runInspectionSync(
       updateFields.status = mapped.status
     }
 
+    // GS Retrofit confirmed appointments win: when the request is a fully
+    // placeable confirmed appointment, mirror its date/time/inspector onto our
+    // scheduling fields so it appears on the dispatch timeline — even if the
+    // dispatcher previously placed it elsewhere. We only WRITE a placement here;
+    // we never CLEAR a dispatcher's in-progress local schedule for a request that
+    // GS Retrofit has not (yet) confirmed, so manual scheduling is never wiped.
+    // Also force status to confirmed for the placement (skipped for terminal jobs).
+    if (mapped.dispatch_status === 'scheduled') {
+      updateFields.scheduled_date = mapped.scheduled_date
+      updateFields.scheduled_time = mapped.scheduled_time
+      updateFields.assigned_to = mapped.assigned_to
+      updateFields.dispatch_status = 'scheduled'
+      if (!(TERMINAL_STATUSES as readonly string[]).includes(current)) {
+        updateFields.status = 'confirmed'
+      }
+    }
+
     const { error } = await supabase.from('jobs').update(updateFields).eq('id', existing.id)
     if (error) {
       skipped++
